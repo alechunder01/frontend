@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { MathUtils, Spherical, Vector3 } from "three";
 
 const SMOOTHING = 4;
+const SHAKE_DURATION = 3.5; // seconds
 // Aspect ratio the views are framed for. Narrower screens (phones in
 // portrait) get the camera pulled back so the same width still fits.
 const REFERENCE_ASPECT = 1.4;
@@ -12,7 +13,9 @@ const spherical = new Spherical();
 
 // Eases the camera towards `position`/`target`, then orbits it around the
 // target by up to `range` radians, following the mouse position.
-const CameraRig = ({ position, target: targetArray, range }) => {
+// `shake` is a ref holding 0..1; it is set to 1 to start a shake and decays
+// back to 0 on its own.
+const CameraRig = ({ position, target: targetArray, range, shake }) => {
   // Smoothed copies of the props, so changing them glides instead of snapping.
   const currentPosition = useRef(new Vector3(...position));
   const currentTarget = useRef(new Vector3(...targetArray));
@@ -56,6 +59,18 @@ const CameraRig = ({ position, target: targetArray, range }) => {
 
     camera.position.setFromSpherical(spherical).add(target);
     camera.lookAt(target);
+
+    if (shake && shake.current > 0) {
+      const s = shake.current * shake.current;
+      const t = performance.now() / 1000;
+      camera.position.x += (Math.sin(t * 47) + Math.sin(t * 31)) * 0.03 * s;
+      camera.position.y += (Math.sin(t * 53) + Math.sin(t * 29)) * 0.03 * s;
+      camera.position.z += Math.sin(t * 41) * 0.03 * s;
+      camera.rotateZ(Math.sin(t * 37) * 0.06 * s);
+      camera.rotateX(Math.sin(t * 43) * 0.04 * s);
+      camera.rotateY(Math.sin(t * 59) * 0.04 * s);
+      shake.current = Math.max(0, shake.current - delta / SHAKE_DURATION);
+    }
     // The laptop screen (drei Html) reads the camera matrices in its own
     // frame callback; make them current so it stays glued to the model.
     camera.updateMatrixWorld();

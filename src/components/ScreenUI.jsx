@@ -30,7 +30,7 @@ const layout = (ctx, items) => {
   return boxes;
 };
 
-const draw = (ctx, boxes, hover) => {
+const draw = (ctx, boxes, hover, image) => {
   const [w, h] = SCREEN_PX;
   ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = "#000";
@@ -42,6 +42,15 @@ const draw = (ctx, boxes, hover) => {
   g.addColorStop(0.7, "rgba(0,0,0,0)");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
+
+  if (image) {
+    // Fit to the screen height, centred.
+    const scale = h / image.height;
+    const iw = image.width * scale;
+    ctx.drawImage(image, (w - iw) / 2, 0, iw, h);
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillRect(0, 0, w, h);
+  }
 
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#fff";
@@ -70,7 +79,8 @@ const draw = (ctx, boxes, hover) => {
   ctx.fillRect(0, 0, w, h);
 };
 
-const ScreenUI = ({ items, position }) => {
+const ScreenUI = ({ items, position, imageSrc }) => {
+  const [image, setImage] = useState(null);
   const [fontReady, setFontReady] = useState(false);
   const [hover, setHover] = useState(-1);
 
@@ -91,6 +101,14 @@ const ScreenUI = ({ items, position }) => {
       .then(() => setFontReady(true));
   }, []);
 
+  useEffect(() => {
+    setImage(null);
+    if (!imageSrc) return;
+    const img = new Image();
+    img.onload = () => setImage(img);
+    img.src = imageSrc;
+  }, [imageSrc]);
+
   const boxes = useMemo(
     () => layout(ctx, items),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -98,9 +116,9 @@ const ScreenUI = ({ items, position }) => {
   );
 
   useEffect(() => {
-    draw(ctx, boxes, hover);
+    draw(ctx, boxes, hover, image);
     texture.needsUpdate = true;
-  }, [ctx, boxes, hover, texture]);
+  }, [ctx, boxes, hover, image, texture]);
 
   const hit = (uv) => {
     const x = uv.x * SCREEN_PX[0];

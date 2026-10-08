@@ -1,5 +1,5 @@
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useCallback, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
   ContactShadows,
   PerformanceMonitor,
@@ -16,6 +16,7 @@ import LoadingScreen from "./components/LoadingScreen";
 import Background from "./components/Background";
 import Atmosphere from "./components/Atmosphere";
 import Water from "./components/Water";
+import Blast from "./components/Blast";
 
 // Starter camera: follows the mouse, limited to a few degrees around this view.
 const CAMERA_POSITION = [0, 0.39, 0.69];
@@ -25,6 +26,9 @@ const CAMERA_RANGE = (6 * Math.PI) / 180;
 
 const LAPTOP_POSITION = [0.2, 0, 0.1];
 const LAPTOP_ROTATION = [0, -20, 0]; // degrees
+
+// The bomb is on the laptop.
+const EXPLOSION_ORIGIN = [LAPTOP_POSITION[0], 0.1, LAPTOP_POSITION[2]];
 
 const WATER_POSITION = [-32.75, -3.84, -27.3];
 const WATER_SIZE = [108, 42];
@@ -47,6 +51,21 @@ const App = () => {
   const [cameraTarget, setCameraTarget] = useState(START_TARGET);
   // Post-processing is switched off for good if the frame rate drops.
   const [effects, setEffects] = useState(!IS_TOUCH);
+  const [exploded, setExploded] = useState(false);
+  const [canRebuild, setCanRebuild] = useState(false);
+  const shake = useRef(0);
+  const explode = useCallback(() => {
+    shake.current = 1;
+    setExploded(true);
+  }, []);
+  useEffect(() => {
+    if (!exploded) return;
+    const t = setTimeout(() => setCanRebuild(true), 4000);
+    return () => {
+      clearTimeout(t);
+      setCanRebuild(false);
+    };
+  }, [exploded]);
   const handleDone = useCallback(() => setReady(true), []);
 
   return (
@@ -65,12 +84,15 @@ const App = () => {
             <Laptop
               position={LAPTOP_POSITION}
               rotation={LAPTOP_ROTATION}
+              exploded={exploded}
+              onExplode={explode}
               onZoom={(pos, target) => {
                 setCameraPosition(pos);
                 setCameraTarget(target);
               }}
             />
-            <Background />
+            <Background exploded={exploded} explosionOrigin={EXPLOSION_ORIGIN} />
+            <Blast position={EXPLOSION_ORIGIN} active={exploded} />
 
             {/*Atmosphere, shading*/}
             <Atmosphere />
@@ -101,9 +123,16 @@ const App = () => {
             position={cameraPosition}
             target={cameraTarget}
             range={CAMERA_RANGE}
+            shake={shake}
           />
         </Canvas>
       </div>
+      {exploded && <div className="flash" />}
+      {canRebuild && (
+        <button className="rebuild" onClick={() => setExploded(false)}>
+          rebuild
+        </button>
+      )}
       <LoadingScreen onDone={handleDone} />
     </div>
   );

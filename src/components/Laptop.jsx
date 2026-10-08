@@ -3,6 +3,7 @@ import { useGLTF } from "@react-three/drei";
 import { createPortal } from "@react-three/fiber";
 import { Euler, MathUtils, Vector3 } from "three";
 import { enableShadows } from "../shadows";
+import { useExplode } from "../explode";
 import ScreenUI from "./ScreenUI";
 
 // Screen mesh is a flat 0.584 x 0.404 plane centred at (0, 0.21, 0.01) in the
@@ -35,11 +36,14 @@ export const IS_PORTRAIT =
 const Laptop = ({
   onStart,
   onZoom,
+  onExplode,
+  exploded = false,
   position = [0, 0, 0],
   rotation = [0, 0, 0],
 }) => {
   const { scene, nodes } = useGLTF("/models/laptop.glb");
   useLayoutEffect(() => enableShadows(scene), [scene]);
+  useExplode(scene, exploded, position);
   const [page, setPage] = useState("home");
   const DEFAULT_VIEW = IS_PORTRAIT
     ? screenView(position, rotation)
@@ -69,15 +73,15 @@ const Laptop = ({
         ];
       case "game":
         return [
-          { text: "Game setup", size: 48, mb: 32 },
-          { text: "connect to bomb unit", size: 32, onClick: go("home") },
+          { text: "Bomb connected!", size: 64, mb: 32 },
+          { text: "explode", size: 32, onClick: onExplode },
           { text: "back", size: 32, onClick: go("home", DEFAULT_VIEW) },
         ];
       default:
         return [{ text: "Page not found", size: 32 }];
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [page, onExplode]);
 
   return (
     <>
@@ -87,7 +91,11 @@ const Laptop = ({
         rotation={rotation.map(MathUtils.degToRad)}
       />
       {createPortal(
-        <ScreenUI items={items} position={SCREEN_POSITION} />,
+        <ScreenUI
+          items={items}
+          position={SCREEN_POSITION}
+          imageSrc={page === "game" ? "/bomb.webp" : null}
+        />,
         nodes.laptop_screen,
       )}
     </>

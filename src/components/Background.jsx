@@ -3,12 +3,18 @@ import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { Color, MathUtils } from "three";
 import { enableShadows } from "../shadows";
+import { useExplode } from "../explode";
 
 const TABLE_COLOR = "#b9ae9a"; // warm concrete instead of near-white
 const SWAY_STRENGTH = 0.02;
 
 // `rotation` is in degrees.
-const Background = ({ position = [0, 0, 0], rotation = [0, 0, 0] }) => {
+const Background = ({
+  position = [0, 0, 0],
+  rotation = [0, 0, 0],
+  exploded = false,
+  explosionOrigin = [0, 0, 0],
+}) => {
   const { scene } = useGLTF("/models/scene.glb");
   const time = useMemo(() => ({ value: 0 }), []);
 
@@ -44,6 +50,8 @@ const Background = ({ position = [0, 0, 0], rotation = [0, 0, 0] }) => {
       }
     });
   }, [scene, time]);
+
+  useExplode(scene, exploded, explosionOrigin);
 
   useFrame((_, delta) => {
     time.value += delta;
