@@ -6,11 +6,18 @@
   #root {
     @apply h-full;
   }
+  html,
+  body {
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 @layer components {
   .app {
     @apply h-screen w-screen bg-neutral-900;
+    height: 100dvh;
+    touch-action: none;
   }
 
   .scene {

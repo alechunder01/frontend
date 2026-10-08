@@ -3,6 +3,9 @@ import { useEffect, useRef } from "react";
 import { MathUtils, Spherical, Vector3 } from "three";
 
 const SMOOTHING = 4;
+// Aspect ratio the views are framed for. Narrower screens (phones in
+// portrait) get the camera pulled back so the same width still fits.
+const REFERENCE_ASPECT = 1.4;
 
 const offset = new Vector3();
 const spherical = new Spherical();
@@ -45,7 +48,9 @@ const CameraRig = ({ position, target: targetArray, range }) => {
     mouse.x = MathUtils.damp(mouse.x, mouseTarget.current.x, SMOOTHING, delta);
     mouse.y = MathUtils.damp(mouse.y, mouseTarget.current.y, SMOOTHING, delta);
 
+    const fit = Math.max(1, REFERENCE_ASPECT / camera.aspect);
     spherical.setFromVector3(offset.copy(pos).sub(target));
+    spherical.radius *= fit;
     spherical.phi -= mouse.y * range;
     spherical.theta += mouse.x * range;
 

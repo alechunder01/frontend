@@ -32,12 +32,17 @@ const WATER_SIZE = [108, 42];
 // Point the camera keeps in focus; everything else is blurred a little.
 const FOCUS_POINT = [LAPTOP_POSITION[0], 0.15, LAPTOP_POSITION[2]];
 
+// Phones and tablets: lower resolution and no post-processing, to stay smooth.
+const IS_TOUCH =
+  typeof window !== "undefined" &&
+  window.matchMedia("(pointer: coarse)").matches;
+
 const App = () => {
   const [ready, setReady] = useState(false);
   const [cameraPosition, setCameraPosition] = useState(CAMERA_POSITION);
   const [cameraTarget, setCameraTarget] = useState(CAMERA_TARGET);
   // Post-processing is switched off for good if the frame rate drops.
-  const [effects, setEffects] = useState(true);
+  const [effects, setEffects] = useState(!IS_TOUCH);
   const handleDone = useCallback(() => setReady(true), []);
 
   return (
@@ -45,7 +50,7 @@ const App = () => {
       <div className="scene" data-ready={ready}>
         <Canvas
           shadows
-          dpr={[1, 1.5]}
+          dpr={IS_TOUCH ? [1, 1.25] : [1, 1.5]}
           camera={{ position: CAMERA_POSITION, fov: CAMERA_FOV }}
         >
           <PerformanceMonitor onDecline={() => setEffects(false)} />
