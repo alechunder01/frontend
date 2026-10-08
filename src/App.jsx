@@ -17,6 +17,7 @@ import Background from "./components/Background";
 import Atmosphere from "./components/Atmosphere";
 import Water from "./components/Water";
 import Blast from "./components/Blast";
+import { BEEP_TIMES, playBombSequence, playHappy } from "./boom";
 
 // Starter camera: follows the mouse, limited to a few degrees around this view.
 const CAMERA_POSITION = [0, 0.39, 0.69];
@@ -45,6 +46,16 @@ const [START_POSITION, START_TARGET] = IS_PORTRAIT
   ? screenView(LAPTOP_POSITION, LAPTOP_ROTATION)
   : [CAMERA_POSITION, CAMERA_TARGET];
 
+// Confetti pieces with random position, colour, size and timing.
+const CONFETTI = Array.from({ length: 60 }, () => ({
+  left: `${Math.random() * 100}%`,
+  background: `hsl(${Math.floor(Math.random() * 360)} 90% 60%)`,
+  width: `${6 + Math.random() * 8}px`,
+  height: `${10 + Math.random() * 10}px`,
+  animationDuration: `${2.5 + Math.random() * 3}s`,
+  animationDelay: `${Math.random() * 3}s`,
+}));
+
 const App = () => {
   const [ready, setReady] = useState(false);
   const [cameraPosition, setCameraPosition] = useState(START_POSITION);
@@ -53,23 +64,54 @@ const App = () => {
   const [effects, setEffects] = useState(!IS_TOUCH);
   const [exploded, setExploded] = useState(false);
   const [canRebuild, setCanRebuild] = useState(false);
+  const [fading, setFading] = useState(false);
+  const [finale, setFinale] = useState(false);
   const shake = useRef(0);
+  const [armed, setArmed] = useState(false);
+  const [beeps, setBeeps] = useState(0); // beeps played so far
+  const [beepOn, setBeepOn] = useState(false);
   const explode = useCallback(() => {
-    shake.current = 1;
-    setExploded(true);
-  }, []);
+    if (armed) return;
+    setArmed(true);
+    // Beeps first, then the explosion.
+    const delay = playBombSequence();
+    BEEP_TIMES.forEach((t, i) => {
+      setTimeout(
+        () => {
+          setBeeps(i + 1);
+          setBeepOn(true);
+          setTimeout(() => setBeepOn(false), 70);
+        },
+        t * 1000 + 50,
+      );
+    });
+    setTimeout(() => {
+      shake.current = 1;
+      setExploded(true);
+    }, delay);
+  }, [armed]);
   useEffect(() => {
     if (!exploded) return;
-    const t = setTimeout(() => setCanRebuild(true), 4000);
+    // Fade to black a while after the blast, then the happy ending.
+    const dark = setTimeout(() => setFading(true), 300);
+    const end = setTimeout(() => {
+      setFinale(true);
+      playHappy();
+    }, 2000);
+    const rebuild = setTimeout(() => setCanRebuild(true), 5000);
     return () => {
-      clearTimeout(t);
+      clearTimeout(dark);
+      clearTimeout(end);
+      clearTimeout(rebuild);
+      setFading(false);
+      setFinale(false);
       setCanRebuild(false);
     };
   }, [exploded]);
   const handleDone = useCallback(() => setReady(true), []);
 
   return (
-    <div className="app">
+    <div className="app" data-exploded={exploded}>
       <div className="scene" data-ready={ready}>
         <Canvas
           shadows
@@ -86,17 +128,21 @@ const App = () => {
               rotation={LAPTOP_ROTATION}
               exploded={exploded}
               onExplode={explode}
+              countdown={armed ? BEEP_TIMES.length - beeps : null}
               onZoom={(pos, target) => {
                 setCameraPosition(pos);
                 setCameraTarget(target);
               }}
             />
-            <Background exploded={exploded} explosionOrigin={EXPLOSION_ORIGIN} />
+            <Background
+              exploded={exploded}
+              explosionOrigin={EXPLOSION_ORIGIN}
+            />
             <Blast position={EXPLOSION_ORIGIN} active={exploded} />
 
             {/*Atmosphere, shading*/}
             <Atmosphere />
-            <Water position={WATER_POSITION} size={WATER_SIZE} />
+            {!exploded && <Water position={WATER_POSITION} size={WATER_SIZE} />}
             <ContactShadows
               frames={1}
               position={[LAPTOP_POSITION[0], 0.001, LAPTOP_POSITION[2]]}
@@ -127,9 +173,24 @@ const App = () => {
           />
         </Canvas>
       </div>
+      {beepOn && <div className="beep-flash" />}
       {exploded && <div className="flash" />}
+      <div className="blackout" data-on={fading} />
+      {finale && (
+        <>
+          <div className="confetti" aria-hidden="true">
+            {CONFETTI.map((c, i) => (
+              <i key={i} style={c} />
+            ))}
+          </div>
+          <div className="finale">
+            <img src="/bomb.webp" alt="" />
+            <p>اللّهُ أكبرالاللّهُ أكبرلّهُ أكبر</p>
+          </div>
+        </>
+      )}
       {canRebuild && (
-        <button className="rebuild" onClick={() => setExploded(false)}>
+        <button className="rebuild" onClick={() => window.location.reload()}>
           rebuild
         </button>
       )}

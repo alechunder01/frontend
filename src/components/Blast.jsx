@@ -8,6 +8,8 @@ const DURATION = 2.2; // seconds
 // Fireball: a burst of glowing sparks and a short light flash at `position`.
 const Blast = ({ position, active }) => {
   const light = useRef();
+  const wave = useRef();
+  const waveMaterial = useRef();
   const material = useRef();
   const age = useRef(Infinity);
   const velocities = useMemo(() => new Float32Array(COUNT * 3), []);
@@ -45,6 +47,7 @@ const Blast = ({ position, active }) => {
     const delta = Math.min(rawDelta, 0.05);
     if (age.current > DURATION) {
       material.current.opacity = 0;
+      waveMaterial.current.opacity = 0;
       light.current.intensity = 0;
       return;
     }
@@ -59,6 +62,10 @@ const Blast = ({ position, active }) => {
     }
     geometry.attributes.position.needsUpdate = true;
     material.current.opacity = 1 - t;
+    // Shockwave: a fast expanding glowing sphere that fades.
+    const w = Math.min(1, age.current / 0.6);
+    wave.current.scale.setScalar(0.1 + w * 9);
+    waveMaterial.current.opacity = 0.7 * (1 - w) * (1 - w);
     light.current.intensity = 60 * Math.max(0, 1 - t * 3);
   });
 
@@ -75,6 +82,17 @@ const Blast = ({ position, active }) => {
           blending={AdditiveBlending}
         />
       </points>
+      <mesh ref={wave}>
+        <sphereGeometry args={[1, 32, 16]} />
+        <meshBasicMaterial
+          ref={waveMaterial}
+          color="#ffd9a0"
+          transparent
+          opacity={0}
+          depthWrite={false}
+          blending={AdditiveBlending}
+        />
+      </mesh>
       <pointLight ref={light} color="#ffb060" intensity={0} distance={12} />
     </group>
   );

@@ -19,6 +19,7 @@ const CameraRig = ({ position, target: targetArray, range, shake }) => {
   // Smoothed copies of the props, so changing them glides instead of snapping.
   const currentPosition = useRef(new Vector3(...position));
   const currentTarget = useRef(new Vector3(...targetArray));
+  const baseFov = useRef(null);
   const currentPointer = useRef({ x: 0, y: 0 });
   // Mouse position in -1..1, tracked on the window. R3F's own `pointer` uses
   // event.offsetX, which is relative to the element under the cursor, so it
@@ -35,6 +36,7 @@ const CameraRig = ({ position, target: targetArray, range, shake }) => {
   }, []);
 
   useFrame(({ camera }, rawDelta) => {
+    baseFov.current ??= camera.fov;
     // Clamp so a long frame (e.g. a hitch) can't make the camera jump.
     const delta = Math.min(rawDelta, 0.05);
     const pos = currentPosition.current;
@@ -70,6 +72,9 @@ const CameraRig = ({ position, target: targetArray, range, shake }) => {
       camera.rotateX(Math.sin(t * 43) * 0.04 * s);
       camera.rotateY(Math.sin(t * 59) * 0.04 * s);
       shake.current = Math.max(0, shake.current - delta / SHAKE_DURATION);
+      // Zoom punch from the blast, snapping back quickly.
+      camera.fov = baseFov.current - Math.pow(shake.current, 6) * 30;
+      camera.updateProjectionMatrix();
     }
     // The laptop screen (drei Html) reads the camera matrices in its own
     // frame callback; make them current so it stays glued to the model.

@@ -38,6 +38,7 @@ const Laptop = ({
   onZoom,
   onExplode,
   exploded = false,
+  countdown = null,
   position = [0, 0, 0],
   rotation = [0, 0, 0],
 }) => {
@@ -72,6 +73,12 @@ const Laptop = ({
           { text: "back", size: 32, onClick: go("home", DEFAULT_VIEW) },
         ];
       case "game":
+        if (countdown !== null) {
+          return [
+            { text: "Bomb connected!", size: 64, mb: 32 },
+            { text: `DETONATING ${countdown}`, size: 32 },
+          ];
+        }
         return [
           { text: "Bomb connected!", size: 64, mb: 32 },
           { text: "explode", size: 32, onClick: onExplode },
@@ -81,7 +88,7 @@ const Laptop = ({
         return [{ text: "Page not found", size: 32 }];
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, onExplode]);
+  }, [page, onExplode, countdown]);
 
   return (
     <>
