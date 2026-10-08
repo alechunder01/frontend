@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+@layer base {
+  html,
+  body,
+  #root {
+    @apply h-full;
+  }
+}
+
+@layer components {
+  .app {
+    @apply h-screen w-screen bg-neutral-900;
+  }
+
+  .scene {
+    @apply h-full w-full opacity-0 transition-opacity duration-[900ms] ease-in-out;
+  }
+  .scene[data-ready="true"] {
+    @apply opacity-100;
+  }
+
+  .loader {
+    @apply fixed inset-0 z-10 flex flex-col items-center justify-center gap-4
+      bg-neutral-900 font-sans text-white opacity-100 transition-opacity duration-300 ease-in-out;
+    position: fixed;
+    z-index: 10000;
+  }
+  .loader[data-done="true"] {
+    @apply pointer-events-none opacity-0;
+  }
+
+  .loader-track {
+    @apply h-1 w-60 overflow-hidden rounded-sm bg-neutral-700;
+  }
+  .loader-bar {
+    @apply h-full bg-white;
+  }
+  .loader-percent {
+    @apply text-sm tabular-nums;
+  }
+}
+
+.nazev {
+  position: fixed;
+  top: 50%;
+  right: 10vw;
+  z-index: 100;
+  max-width: 35vw;
+  transform: translateY(-50%);
+  color: white;
+}
+.nazev h1 {
+  font-size: clamp(3rem, 7vw, 9rem);
+  line-height: 1;
+}
+.nazev .credits {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  opacity: 0.6;
+}
+
+/*Laptop*/
+.screen-ui {
+  width: 1024px;
+  height: 700px;
+  color: white;
+  background-color: black;
+  font-family: "Press Start 2P", system-ui;
+  font-weight: 400;
+  font-style: normal;
+  position: relative;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+
+  /* Darker corners and a soft inner glow, like light from a real display */
+  background-image: radial-gradient(
+    ellipse at center,
+    rgba(40, 70, 90, 0.35) 0%,
+    rgba(0, 0, 0, 0) 70%
+  );
+  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.9);
+
+  /* Faint diagonal glare, like a reflection on the glass */
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background: linear-gradient(
+      115deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0) 35%
+    );
+  }
+
+  /* CRT scanlines: pure CSS, no GPU cost */
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0.25) 3px
+    );
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    height: 100%;
+    font-size: 2rem;
+
+    h1 {
+      font-size: 5rem;
+    }
+
+    h2 {
+      font-size: 3rem;
+      margin-bottom: 2rem;
+    }
+
+    button {
+      margin-top: 1rem;
+    }
+    .credits-text {
+      font-size: 1.4rem;
+    }
+  }
+}
+
+.cat {
+  width: 100%;
+}
