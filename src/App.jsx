@@ -10,7 +10,7 @@ import {
   EffectComposer,
   ToneMapping,
 } from "@react-three/postprocessing";
-import Laptop from "./components/Laptop";
+import Laptop, { IS_PORTRAIT, screenView } from "./components/Laptop";
 import CameraRig from "./components/CameraRig";
 import LoadingScreen from "./components/LoadingScreen";
 import Background from "./components/Background";
@@ -37,10 +37,14 @@ const IS_TOUCH =
   typeof window !== "undefined" &&
   window.matchMedia("(pointer: coarse)").matches;
 
+const [START_POSITION, START_TARGET] = IS_PORTRAIT
+  ? screenView(LAPTOP_POSITION, LAPTOP_ROTATION)
+  : [CAMERA_POSITION, CAMERA_TARGET];
+
 const App = () => {
   const [ready, setReady] = useState(false);
-  const [cameraPosition, setCameraPosition] = useState(CAMERA_POSITION);
-  const [cameraTarget, setCameraTarget] = useState(CAMERA_TARGET);
+  const [cameraPosition, setCameraPosition] = useState(START_POSITION);
+  const [cameraTarget, setCameraTarget] = useState(START_TARGET);
   // Post-processing is switched off for good if the frame rate drops.
   const [effects, setEffects] = useState(!IS_TOUCH);
   const handleDone = useCallback(() => setReady(true), []);

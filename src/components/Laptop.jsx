@@ -18,16 +18,20 @@ const SCREEN_VIEW_LOCAL = [
   [0, 0.335, 0.223],
   [0, 0.211, -0.261],
 ];
-const screenView = (position, rotation) => {
+export const screenView = (position, rotation) => {
   const euler = new Euler(...rotation.map(MathUtils.degToRad));
   return SCREEN_VIEW_LOCAL.map((point) =>
     new Vector3(...point).applyEuler(euler).add(new Vector3(...position)).toArray(),
   );
 };
-const DEFAULT_VIEW = [
+const OVERVIEW = [
   [0, 0.39, 0.69],
   [0, 0.12, -0.07],
 ];
+// On portrait screens (phones) the screen is the whole point, so stay on it.
+export const IS_PORTRAIT =
+  typeof window !== "undefined" &&
+  window.matchMedia("(max-aspect-ratio: 1/1)").matches;
 
 // `rotation` is in degrees.
 const Laptop = ({
@@ -39,6 +43,9 @@ const Laptop = ({
   const { scene, nodes } = useGLTF("/models/laptop.glb");
   useLayoutEffect(() => enableShadows(scene), [scene]);
   const [page, setPage] = useState("home");
+  const DEFAULT_VIEW = IS_PORTRAIT
+    ? screenView(position, rotation)
+    : OVERVIEW;
 
   const [content, setContent] = useState(null);
 

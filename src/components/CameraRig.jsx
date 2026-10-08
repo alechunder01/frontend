@@ -56,7 +56,10 @@ const CameraRig = ({ position, target: targetArray, range }) => {
 
     camera.position.setFromSpherical(spherical).add(target);
     camera.lookAt(target);
-  });
+    // The laptop screen (drei Html) reads the camera matrices in its own
+    // frame callback; make them current so it stays glued to the model.
+    camera.updateMatrixWorld();
+  }, -1);
 
   return null;
 };
