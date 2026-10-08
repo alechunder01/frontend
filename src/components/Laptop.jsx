@@ -1,15 +1,13 @@
-import { useEffect, useLayoutEffect, useState } from "react";
-import { useGLTF, Html } from "@react-three/drei";
+import { useLayoutEffect, useMemo, useState } from "react";
+import { useGLTF } from "@react-three/drei";
 import { createPortal } from "@react-three/fiber";
 import { Euler, MathUtils, Vector3 } from "three";
 import { enableShadows } from "../shadows";
+import ScreenUI from "./ScreenUI";
 
 // Screen mesh is a flat 0.584 x 0.404 plane centred at (0, 0.21, 0.01) in the
-// node's local space. Html `transform` maps 1 world unit to 40px at scale 1,
-// so 1168x808px at scale 0.02 covers the plane exactly.
+// node's local space; the UI texture sits just in front of it.
 const SCREEN_POSITION = [0, 0.215, 0.011];
-const SCREEN_PX = [1168, 780];
-const SCREEN_SCALE = 0.02;
 
 // [position, target] for the camera. The screen is tilted back ~14°, so the
 // close-up sits 0.5 units out along the screen normal, centred on the screen.
@@ -47,81 +45,39 @@ const Laptop = ({
     ? screenView(position, rotation)
     : OVERVIEW;
 
-  const [content, setContent] = useState(null);
+  const go = (next, view) => () => {
+    setPage(next);
+    if (view) onZoom(...view);
+  };
 
-  useEffect(() => {
+  const items = useMemo(() => {
+    const zoomed = screenView(position, rotation);
     switch (page) {
       case "home":
-        setContent(
-          <div>
-            <h1>defuse.exe</h1>
-            <button
-              onClick={() => {
-                setPage("game");
-                onZoom(...screenView(position, rotation));
-              }}
-            >
-              start.game
-            </button>
-            <button
-              onClick={() => {
-                setPage("credits");
-                onZoom(...screenView(position, rotation));
-              }}
-            >
-              credits
-            </button>
-          </div>,
-        );
-        break;
+        return [
+          { text: "defuse.exe", size: 80 },
+          { text: "start.game", size: 32, mb: 0, onClick: go("game", zoomed) },
+          { text: "credits", size: 32, onClick: go("credits", zoomed) },
+        ];
       case "credits":
-        setContent(
-          <div>
-            <p className="credits-text">Marek Beil - research, electronics</p>
-            <p className="credits-text">Lukáš Vlček - 3D modeling</p>
-            <p className="credits-text">
-              František Burdič - 3D modeling, assembly
-            </p>
-            <p className="credits-text">
-              Alexandre Nicolas - web developement, assembly
-            </p>
-            <button
-              onClick={() => {
-                setPage("home");
-                onZoom(...DEFAULT_VIEW);
-              }}
-            >
-              back
-            </button>
-          </div>,
-        );
-        break;
+        return [
+          { text: "Marek Beil - research, electronics", size: 22.4 },
+          { text: "Lukáš Vlček - 3D modeling", size: 22.4 },
+          { text: "František Burdič - 3D modeling, assembly", size: 22.4 },
+          { text: "Alexandre Nicolas - web developement, assembly", size: 22.4 },
+          { text: "back", size: 32, onClick: go("home", DEFAULT_VIEW) },
+        ];
       case "game":
-        setContent(
-          <div>
-            <h2>Game setup</h2>
-            <button
-              onClick={() => {
-                setPage("home");
-              }}
-            >
-              connect to bomb unit
-            </button>
-            <button
-              onClick={() => {
-                setPage("home");
-                onZoom(...DEFAULT_VIEW);
-              }}
-            >
-              back
-            </button>
-          </div>,
-        );
-        break;
+        return [
+          { text: "Game setup", size: 48, mb: 32 },
+          { text: "connect to bomb unit", size: 32, onClick: go("home") },
+          { text: "back", size: 32, onClick: go("home", DEFAULT_VIEW) },
+        ];
       default:
-        setContent(<p>Page not found</p>);
+        return [{ text: "Page not found", size: 32 }];
     }
-  }, [page, onStart]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   return (
     <>
@@ -131,22 +87,7 @@ const Laptop = ({
         rotation={rotation.map(MathUtils.degToRad)}
       />
       {createPortal(
-        <Html
-          transform
-          position={SCREEN_POSITION}
-          scale={SCREEN_SCALE}
-        >
-          <div
-            className="screen-ui"
-            style={{
-              width: SCREEN_PX[0],
-              height: SCREEN_PX[1],
-              overflow: "hidden",
-            }}
-          >
-            {content}
-          </div>
-        </Html>,
+        <ScreenUI items={items} position={SCREEN_POSITION} />,
         nodes.laptop_screen,
       )}
     </>
